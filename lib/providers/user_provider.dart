@@ -1,39 +1,102 @@
-class User {
-  final String name;
-  final String email;
-  final bool isLoggedIn;
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../models/user.dart';
 
-  User({
-    required this.name,
-    required this.email,
-    this.isLoggedIn = false,
+class UserProvider extends InheritedWidget {
+  final User user;
+  final Function(User) updateUser;
+  final VoidCallback logout;
+  final bool isLoading;
+
+  const UserProvider({
+    super.key,
+    required this.user,
+    required this.updateUser,
+    required this.logout,
+    required this.isLoading,
+    required super.child,
   });
 
-  Map<String, dynamic> toMap() {
-    return {
-      'name': name,
-      'email': email,
-      'isLoggedIn': isLoggedIn,
-    };
+  static UserProvider of(BuildContext context) {
+    final provider =
+        context.dependOnInheritedWidgetOfExactType<UserProvider>();
+    assert(provider != null, 'UserProvider tidak ditemukan di context');
+    return provider!;
   }
 
-  factory User.fromMap(Map<String, dynamic> map) {
-    return User(
-      name: map['name'] ?? '',
-      email: map['email'] ?? '',
-      isLoggedIn: map['isLoggedIn'] ?? false,
-    );
+  @override
+  bool updateShouldNotify(UserProvider oldWidget) {
+    return oldWidget.user != user || oldWidget.isLoading != isLoading;
+  }
+}
+
+class UserProviderWrapper extends StatefulWidget {
+  final Widget child;
+  const UserProviderWrapper({super.key, required this.child});
+
+  @override
+  State<UserProviderWrapper> createState() => _UserProviderWrapperState();
+}
+
+class _UserProviderWrapperState extends State<UserProviderWrapper> {
+  User _user = User(name: '', email: '');
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUser();
   }
 
-  User copyWith({
-    String? name,
-    String? email,
-    bool? isLoggedIn,
-  }) {
-    return User(
-      name: name ?? this.name,
-      email: email ?? this.email,
-      isLoggedIn: isLoggedIn ?? this.isLoggedIn,
+  Future<void> _loadUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    final name = prefs.getString('user_name') ?? '';
+    final email = prefs.getString('user_email') ?? '';
+    final isLoggedIn = prefs.getBool('is_logged_in') ?? false;
+
+    setState(() {
+      _user = User(
+        name: name,
+        email: email,
+        isLoggedIn: isLoggedIn,
+      );
+      _isLoading = false;
+    });
+  }
+
+  Future<void> _updateUser(User newUser) async {
+    setState(() {
+      _isLoading = true;
+    });
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('user_name', newUser.name);
+    await prefs.setString('user_email', newUser.email);
+    await prefs.setBool('is_logged_in', newUser.isLoggedIn);
+
+    setState(() {
+      _user = newUser;
+      _isLoading = false;
+    });
+  }
+
+  Future<void> _logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('user_name');
+    await prefs.setBool('is_logged_in', false);
+
+    setState(() {
+      _user = _user.copyWith(name: '', isLoggedIn: false);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return UserProvider(
+      user: _user,
+      updateUser: _updateUser,
+      logout: _logout,
+      isLoading: _isLoading,
+      child: widget.child,
     );
   }
 }
