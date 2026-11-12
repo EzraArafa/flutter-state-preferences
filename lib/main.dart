@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'providers/user_provider.dart';
 import 'screens/home_screen.dart';
 
@@ -11,10 +12,10 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return UserProviderWrapper(
-      child: Builder(
-        builder: (context) {
-          final provider = UserProvider.of(context);
+    return ChangeNotifierProvider(
+      create: (_) => UserProvider(),
+      child: Consumer<UserProvider>(
+        builder: (context, provider, _) {
           return MaterialApp(
             title: 'State & Preferences',
             debugShowCheckedModeBanner: false,
