@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/user_provider.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -35,15 +36,54 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.dispose();
   }
 
-  void _saveProfile() {
+  Future<void> _saveProfile() async {
     if (_formKey.currentState!.validate()) {
+      final nameInput = _nameController.text.trim();
+      final emailInput = _emailController.text.trim();
+
+      // 1. Validasi karakter berbahaya (misalnya <script> atau tag HTML)
+      final dangerousPattern = RegExp(r'[<>"\x27;]|<script.*?>', caseSensitive: false);
+      if (dangerousPattern.hasMatch(nameInput)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Peringatan Keamanan: Nama mengandung karakter berbahaya (seperti <script>)!',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // 2. Simulasi cek apakah email sudah digunakan di SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      final existingEmail = prefs.getString('user_email') ?? '';
+
+      if (!mounted) return;
+
+      if (existingEmail.isNotEmpty &&
+          existingEmail.toLowerCase() == emailInput.toLowerCase()) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Email sudah digunakan! Silakan gunakan alamat email lain.',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // Jika lolos semua validasi keamanan, simpan profil
       final provider = context.read<UserProvider>();
       final updatedUser = provider.user.copyWith(
-        name: _nameController.text.trim(),
-        email: _emailController.text.trim(),
+        name: nameInput,
+        email: emailInput,
         isLoggedIn: true,
       );
-      provider.updateUser(updatedUser);
+      await provider.updateUser(updatedUser);
+
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Profil berhasil disimpan'),
