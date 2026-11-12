@@ -12,14 +12,30 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return UserProviderWrapper(
-      child: MaterialApp(
-        title: 'State & Preferences',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-          useMaterial3: true,
-        ),
-        home: const HomeScreen(),
+      child: Builder(
+        builder: (context) {
+          final provider = UserProvider.of(context);
+          return MaterialApp(
+            title: 'State & Preferences',
+            debugShowCheckedModeBanner: false,
+            themeMode: provider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+            theme: ThemeData(
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: Colors.deepPurple,
+                brightness: Brightness.light,
+              ),
+              useMaterial3: true,
+            ),
+            darkTheme: ThemeData(
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: Colors.deepPurple,
+                brightness: Brightness.dark,
+              ),
+              useMaterial3: true,
+            ),
+            home: const HomeScreen(),
+          );
+        },
       ),
     );
   }

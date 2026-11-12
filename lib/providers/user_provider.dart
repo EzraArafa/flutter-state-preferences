@@ -7,6 +7,8 @@ class UserProvider extends InheritedWidget {
   final Function(User) updateUser;
   final VoidCallback logout;
   final bool isLoading;
+  final bool isDarkMode;
+  final VoidCallback toggleTheme;
 
   const UserProvider({
     super.key,
@@ -14,6 +16,8 @@ class UserProvider extends InheritedWidget {
     required this.updateUser,
     required this.logout,
     required this.isLoading,
+    required this.isDarkMode,
+    required this.toggleTheme,
     required super.child,
   });
 
@@ -26,7 +30,9 @@ class UserProvider extends InheritedWidget {
 
   @override
   bool updateShouldNotify(UserProvider oldWidget) {
-    return oldWidget.user != user || oldWidget.isLoading != isLoading;
+    return oldWidget.user != user || 
+    oldWidget.isLoading != isLoading ||
+    oldWidget.isDarkMode != isDarkMode;
   }
 }
 
@@ -41,6 +47,7 @@ class UserProviderWrapper extends StatefulWidget {
 class _UserProviderWrapperState extends State<UserProviderWrapper> {
   User _user = User(name: '', email: '');
   bool _isLoading = true;
+  bool _isDarkMode = false;
 
   @override
   void initState() {
@@ -53,6 +60,7 @@ class _UserProviderWrapperState extends State<UserProviderWrapper> {
     final name = prefs.getString('user_name') ?? '';
     final email = prefs.getString('user_email') ?? '';
     final isLoggedIn = prefs.getBool('is_logged_in') ?? false;
+    final isDarkMode = prefs.getBool('is_dark_mode') ?? false;
 
     setState(() {
       _user = User(
@@ -60,7 +68,18 @@ class _UserProviderWrapperState extends State<UserProviderWrapper> {
         email: email,
         isLoggedIn: isLoggedIn,
       );
+      _isDarkMode = isDarkMode;
       _isLoading = false;
+    });
+  }
+
+  Future<void> _toggleTheme() async {
+    final newTheme = !_isDarkMode;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('is_dark_mode', newTheme);
+
+    setState(() {
+      _isDarkMode = newTheme;
     });
   }
 
@@ -96,6 +115,8 @@ class _UserProviderWrapperState extends State<UserProviderWrapper> {
       updateUser: _updateUser,
       logout: _logout,
       isLoading: _isLoading,
+      isDarkMode: _isDarkMode,
+      toggleTheme: _toggleTheme,
       child: widget.child,
     );
   }
