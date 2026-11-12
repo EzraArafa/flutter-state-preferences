@@ -9,6 +9,7 @@ class UserProvider extends InheritedWidget {
   final bool isLoading;
   final bool isDarkMode;
   final VoidCallback toggleTheme;
+  final int visitCount;
 
   const UserProvider({
     super.key,
@@ -18,6 +19,7 @@ class UserProvider extends InheritedWidget {
     required this.isLoading,
     required this.isDarkMode,
     required this.toggleTheme,
+    required this.visitCount,
     required super.child,
   });
 
@@ -32,7 +34,8 @@ class UserProvider extends InheritedWidget {
   bool updateShouldNotify(UserProvider oldWidget) {
     return oldWidget.user != user || 
     oldWidget.isLoading != isLoading ||
-    oldWidget.isDarkMode != isDarkMode;
+    oldWidget.isDarkMode != isDarkMode ||
+    oldWidget.visitCount != visitCount;
   }
 }
 
@@ -48,6 +51,7 @@ class _UserProviderWrapperState extends State<UserProviderWrapper> {
   User _user = User(name: '', email: '');
   bool _isLoading = true;
   bool _isDarkMode = false;
+  int _visitCount = 0;
 
   @override
   void initState() {
@@ -62,6 +66,10 @@ class _UserProviderWrapperState extends State<UserProviderWrapper> {
     final isLoggedIn = prefs.getBool('is_logged_in') ?? false;
     final isDarkMode = prefs.getBool('is_dark_mode') ?? false;
 
+    final currentCount = prefs.getInt('visit_count') ?? 0;
+    final newCount = currentCount + 1;
+    await prefs.setInt('visit_count', newCount);
+
     setState(() {
       _user = User(
         name: name,
@@ -69,6 +77,7 @@ class _UserProviderWrapperState extends State<UserProviderWrapper> {
         isLoggedIn: isLoggedIn,
       );
       _isDarkMode = isDarkMode;
+      _visitCount = newCount;
       _isLoading = false;
     });
   }
@@ -117,6 +126,7 @@ class _UserProviderWrapperState extends State<UserProviderWrapper> {
       isLoading: _isLoading,
       isDarkMode: _isDarkMode,
       toggleTheme: _toggleTheme,
+      visitCount: _visitCount,
       child: widget.child,
     );
   }

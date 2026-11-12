@@ -47,6 +47,11 @@ class HomeScreen extends StatelessWidget {
                 ),
                 textAlign: TextAlign.center,
               ),
+              const SizedBox(height: 12),
+              Chip(
+                avatar: const Icon(Icons.visibility, size: 18),
+                label: Text('Kunjungan ke-${provider.visitCount}'),
+              ),
               const SizedBox(height: 16),
               if (provider.user.isLoggedIn) ...[
                 Text(
