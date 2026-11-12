@@ -13,6 +13,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   late TextEditingController _emailController;
+  final TextEditingController _favoriteController = TextEditingController();
   bool _isInit = true;
 
   @override
@@ -49,6 +50,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       );
     }
+  }
+
+  void _handleAddFavorite() {
+    final text = _favoriteController.text.trim();
+    if (text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Masukkan nama hobi/favorit terlebihdahulu'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+    UserProvider.of(context).addFavorite(text);
+    _favoriteController.clear();
   }
 
   void _logout() {
@@ -158,6 +174,76 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
                    ),
+                   const SizedBox(height: 24),
+                   const Divider(),
+                   const SizedBox(height: 8),
+                   const Text(
+                    'Daftar Hobi / Favorit',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                   ),
+                   const SizedBox(height: 12),
+                   Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _favoriteController,
+                          decoration: const InputDecoration(
+                            labelText: 'Tambah Hobi / Favorit',
+                            prefixIcon: Icon(Icons.favorite_border),
+                            border: OutlineInputBorder(),
+                          ),
+                          onFieldSubmitted: (_) => _handleAddFavorite,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton.filled(
+                        onPressed: _handleAddFavorite,
+                        icon: const Icon(Icons.add),
+                        tooltip: 'Tambah Favorit',
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.deepPurple,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.all(16),
+                        ),
+                      ),
+                    ],
+                   ),
+                   const SizedBox(height: 12),
+                   if (provider.favorites.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8.0),
+                      child: Text(
+                        'Belum ada daftar favorit.',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    )
+                  else
+                    Column(
+                      children: List.generate(
+                        provider.favorites.length,
+                        (index) => Card(
+                          child: ListTile(
+                            leading:const Icon(
+                              Icons.favorite,
+                              color: Colors.deepPurple,
+                            ),
+                            title: Text(provider.favorites[index]),
+                            trailing: IconButton(
+                              icon: const Icon(
+                                Icons.delete,
+                                color: Colors.red,
+                              ),
+                              onPressed: () =>
+                                  provider.removeFavorite(index),
+                              tooltip: 'Hapus',
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),                  
                     const SizedBox(height: 16),
                     Card(
                       color: Colors.amber[50],

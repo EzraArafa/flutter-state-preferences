@@ -10,6 +10,9 @@ class UserProvider extends InheritedWidget {
   final bool isDarkMode;
   final VoidCallback toggleTheme;
   final int visitCount;
+  final List<String> favorites;
+  final Function(String) addFavorite;
+  final Function(int) removeFavorite;
 
   const UserProvider({
     super.key,
@@ -20,6 +23,9 @@ class UserProvider extends InheritedWidget {
     required this.isDarkMode,
     required this.toggleTheme,
     required this.visitCount,
+    required this.favorites,
+    required this.addFavorite,
+    required this.removeFavorite,
     required super.child,
   });
 
@@ -35,7 +41,8 @@ class UserProvider extends InheritedWidget {
     return oldWidget.user != user || 
     oldWidget.isLoading != isLoading ||
     oldWidget.isDarkMode != isDarkMode ||
-    oldWidget.visitCount != visitCount;
+    oldWidget.visitCount != visitCount ||
+    oldWidget.favorites != favorites;
   }
 }
 
@@ -52,6 +59,7 @@ class _UserProviderWrapperState extends State<UserProviderWrapper> {
   bool _isLoading = true;
   bool _isDarkMode = false;
   int _visitCount = 0;
+  List<String> _favorites = [];
 
   @override
   void initState() {
@@ -65,6 +73,7 @@ class _UserProviderWrapperState extends State<UserProviderWrapper> {
     final email = prefs.getString('user_email') ?? '';
     final isLoggedIn = prefs.getBool('is_logged_in') ?? false;
     final isDarkMode = prefs.getBool('is_dark_mode') ?? false;
+    final favorites = prefs.getStringList('favorites') ?? [];
 
     final currentCount = prefs.getInt('visit_count') ?? 0;
     final newCount = currentCount + 1;
@@ -78,9 +87,34 @@ class _UserProviderWrapperState extends State<UserProviderWrapper> {
       );
       _isDarkMode = isDarkMode;
       _visitCount = newCount;
+      _favorites = favorites;
       _isLoading = false;
     });
   }
+
+  Future<void> _addFavorite(String item) async {
+    final trimmed = item.trim();
+    if (trimmed.isEmpty) return;
+
+    final updatedFavorites = List<String>.from(_favorites)..add(trimmed);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('favorites', updatedFavorites);
+
+    setState(() {
+      _favorites = updatedFavorites;
+    });
+  }
+
+  Future<void> _removeFavorite(int index) async {
+    final updatedFavorites = List<String>.from(_favorites)..removeAt(index);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('favorites', updatedFavorites);
+
+    setState(() {
+      _favorites = updatedFavorites;
+    });
+  }
+
 
   Future<void> _toggleTheme() async {
     final newTheme = !_isDarkMode;
@@ -127,6 +161,9 @@ class _UserProviderWrapperState extends State<UserProviderWrapper> {
       isDarkMode: _isDarkMode,
       toggleTheme: _toggleTheme,
       visitCount: _visitCount,
+      favorites: _favorites,
+      addFavorite: _addFavorite,
+      removeFavorite: _removeFavorite,
       child: widget.child,
     );
   }
